@@ -4,7 +4,7 @@ Twitter and Botometer extractor
 ## Description:
 This software extracts Tweets for a list of cashtags and assigns bot scores to the users. Results are saved in two tables in a MySQL database. 
 
-This scans for ASX, NYSE and NASDAQ cashtags.
+This scans ASX, NYSE and NASDAQ cashtags.
 
 ## Requirements:
 - Python3.9 (or above)
