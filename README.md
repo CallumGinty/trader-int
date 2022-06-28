@@ -7,22 +7,26 @@ This software extracts Tweets for a list of cashtags and assigns bot scores to t
 This scans for ASX, NYSE and NASDAQ cashtags.
 
 ## Requirements:
-Python3.9 (or above)
+- Python3.9 (or above)
 
-MySQL server
+- MySQL server
 
-Twitter API key
+- Twitter API key
 
-Botometer API key
+- Botometer API key
 
 
 ### Step 1: 
 Input your server settings in database_config.py
+
 Input your API keys in api_keys.py
 
 ### Step 2:
 To obtain the ticker list, run "Download-ticker-list.sh"
 Or download the .xls file directly: https://www2.asx.com.au/content/dam/asx/issuers/ISIN.xls
+
+Download NYSE and Nasdaq tickers via:
+https://www.nasdaq.com/market-activity/stocks/screener
 
 ### Step 3:
 Extract cashtags and clean up the ticker list with:
