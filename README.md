@@ -8,27 +8,30 @@ This scans for ASX, NYSE and NASDAQ cashtags.
 
 ## Requirements:
 Python3.9 (or above)
+
 MySQL server
+
 Twitter API key
+
 Botometer API key
 
 
-Step 1: 
+### Step 1: 
 Input your server settings in database_config.py
 Input your API keys in api_keys.py
 
-Step 2:
+### Step 2:
 To obtain the ticker list, run "Download-ticker-list.sh"
 Or download the .xls file directly: https://www2.asx.com.au/content/dam/asx/issuers/ISIN.xls
 
-Step 3:
+### Step 3:
 Extract cashtags and clean up the ticker list with:
 clean-ticker-list.py
 
-Step 4:
+### Step 4:
 Begin Twitter scraper with:
 run-search.py
 
-Step 5:
+### Step 5:
 Begin Botometer calls with:
 get-bot-scores.py
