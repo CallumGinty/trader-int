@@ -490,7 +490,7 @@ def count_rows_tweets():
 	print ("The number of Tweets saved is:", result[0][0]) 
      
 ##################### Main Block #####################
-stocks_df = pandas.read_csv(r'ISIN-cleaned.csv') # Import the stock list and set it as the search terms
+stocks_df = pandas.read_csv(r'tickerlist.csv') # Import the stock list and set it as the search terms
 ST = stocks_df.loc[:, 'cashtags'] #make the 'cashtags' column into a list # ST is shorthand for "search term".
 #print (ST) # Uncheck for debugging.
 # ST = ["$QAN"] # Uncheck for debugging. NOTE: This MUST be a tuple or a list. If left as a string it will loop over each letter.

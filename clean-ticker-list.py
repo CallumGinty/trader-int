@@ -2,29 +2,43 @@
 # coding: utf-8
 import pandas
 
+autickers = pandas.read_excel("./ISIN.xls")
+ustickers = pandas.read_csv("nasdaq_screener_1656649805299.csv")
+print ("AU shape:", autickers.shape)
+print ("US shape:", ustickers.shape, "\n")
 
-stocklist = pandas.read_excel("./ISIN.xls")
+print("Removing empty rows...")
+autickers.dropna(axis=0, how='any', inplace=True) #drop empty rows. In the AU tickers, these rows are at the top of file. 
 
-stocklist.dropna(axis=0, how='any', inplace=True) #drop empty rows
+print("Removing non-equity tickers...")
+autickers = autickers[autickers['Security type'] == "ORDINARY FULLY PAID"] #drop rows that arent ordinary fully paid shares
 
-stocklist = stocklist[stocklist['Security type'] == "ORDINARY FULLY PAID"] #drop rows that arent ordinary fully paid shares
+print("Removing duplidate rows...")
+autickers.drop_duplicates(subset='Company name', keep="first", ignore_index=True) # drop any duplicate ASX code rows
 
-#drop any duplicate ASX code rows
-stocklist.drop_duplicates(subset='Company name', keep="first", ignore_index=True) 
-
-#reset the index after removing so many rows
-stocklist.reset_index(drop=True, inplace=True) 
-
-#hashtag append
-searchterm = [ ("#" + stocklist ) for stocklist in stocklist["ASX code"]]
-stocklist['hashtags'] = searchterm
-
-#cashtag append
-cashtag = [ ("$" + stocklist ) for stocklist in stocklist["ASX code"]]
-stocklist['cashtags'] = cashtag
+print("Renaming columns...")
+autickers.rename(columns = {'ASX code': 'Symbol'}, inplace=True)
+ustickers.rename(columns = {'Name': 'Company name'}, inplace=True)
 
 
-stocklist.to_csv(r'ISIN-cleaned.csv') #export out to a csv file
+###############
+print ("AU shape:", autickers.shape)
+print ("US shape:", ustickers.shape, "\n")
+print("Joining tables...")
+combinedtickers = pandas.concat([autickers, ustickers], ignore_index=True) #ignore index, clears and resets the index.
+print ("Combined shape:", combinedtickers.shape, "\n")
+
+print("Creating a list of hashtags...")
+hashtag = [ ("#" + combinedtickers ) for combinedtickers in combinedtickers["Symbol"]]
+combinedtickers['hashtags'] = hashtag
+
+print("Creating a list of cashtags...")
+cashtag = [ ("$" + combinedtickers ) for combinedtickers in combinedtickers["Symbol"]]
+combinedtickers['cashtags'] = cashtag
+
+
+print("Exporting out to a csv file...")
+combinedtickers.to_csv(r'tickerlist.csv')
 
 print("Cleaning complete!")
 
