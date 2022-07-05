@@ -5,16 +5,16 @@ Twitter Botscore extractor
 This software extracts Tweets for a list of equity cashtags and assigns bot scores to the users. Results are saved a MySQL database. 
 
 ## Markets covered:
-ASX (Australian equities) - All tickers
-NYSE - Market capitalisation >$10B
-AMEX - Market capitalisation >$10B
-NASDAQ - Market capitalisation >$10B
+- ASX (Australian equities) - All tickers
+- NYSE - Market capitalisation >$10B
+- AMEX - Market capitalisation >$10B
+- NASDAQ - Market capitalisation >$10B
 
 ## Requirements:
-Python3.9 (or above)
-MySQL server
-Twitter API key
-Botometer API key (Rapid API)
+- Python3.9 (or above)
+- MySQL server
+- Twitter API key
+- Botometer API key (Rapid API)
 
 
 ### Step 1: 

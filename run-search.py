@@ -15,6 +15,8 @@ import pandas
 import time #for the time.sleep() function, used to create a delay between twint searches. Also using it to track compute times
 from database_config import config, createDBconfig, DB_name
 from api_keys import apikey, apikeysecret, access_token, access_token_secret
+from modules.CleanTickerList import cleaning, merge_and_export
+
 
 ##################### Set parameters and start counters #####################
 print("Welcome to TWEEPY ASX Scraper, MySQL version")
@@ -524,8 +526,8 @@ for master_loop in range(1,300): # range(x,y) Where x is starting number and y i
         print ("Scraped tweets for:", item, "Searching for:", int((midtime-starttime)/60), "mins, or", int(((midtime-starttime)/60)/60), "hour/s.")
         count_rows_tweets()
         print ("Loop number:", loop, "Master loop:", master_loop, "\n")
-    print ("Sleeping 30mins before starting another master loop...")
-    time.sleep (1800)
+    print ("Sleeping 15mins before starting another master loop...")
+    time.sleep (900)
 
 #show the total scan time
 finishtime = int(time.perf_counter()) #int the perf_counter float to an integer, easier to read
