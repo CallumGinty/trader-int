@@ -232,13 +232,10 @@ def main_function():
 with Flow("TI: Get bot scores") as flow:
     main_function()
 
-flow.storage = GitHub(
-    repo="CallumGinty/trader-int",
-    path="getBotScores.py")
+# flow.storage = GitHub(
+#     repo="CallumGinty/trader-int",
+#     path="getBotScores.py")
 
 
 # flow.register(project_name="project-traderi")
-# flow.run()
-
-# if __name__ == "__main__":
-    # flow.run()
+flow.run()
