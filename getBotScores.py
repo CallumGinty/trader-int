@@ -1,47 +1,17 @@
 #to run this code, open terminal and use "python filename.py" (Does not require Python 3.9 unlike run-search.py)
-# VERSION 1 Botometer operations have been turned into functions, authentication working
-# VERSION 2 imports a list of account IDs from a DB, finds the score, prints back to DB.
-# VERSION 3 multi threading working, loop counter working with variable shared across processes, appears problematic.
-# VERSION 4 PLANNED: clean up code, improved resillence. proper stop of process when loop limit reached.
-# VERSION 5 Working with mysql again, main error was in futures "chunksize" being smaller than the list size. multithreading not working.
 
-
-from datetime import datetime
 import concurrent.futures
 import multiprocessing
-import sys # used to exit the program upon creating database
 import time # used for measuring run time
 import botometer #Botometer will only work with tweepy version < 3.10
-import mysql.connector # For connecting to dataset
+import prefect
+from prefect import task, Flow
 
-# from database_config import 
-from api_keys import rapidapi_key, twitter_app_auth, config, createDBconfig, DB_name
+from datetime import datetime
+from api_keys import rapidapi_key, twitter_app_auth
+from modules.cursorModule import database_startup, cursor, db
 
-    # CREATE / CONNECT TO DB FILE
-print("Welcome to Botscorer, MySQL version")
-
-starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
-##################### Start database connection and cursor #####################
-try:
-    db = mysql.connector.connect(**config) # Connect to a database with the config set in the parameters
-    print("Connection to database", DB_name, "successful.\n")
-    cursor = db.cursor() # Instantiate a cursor to work with the specified database
-except Exception as DB_con_error: #If there is no database yet, run the script twice. First will create the database then error out. the secondtime will run the actual program.
-    print(f"Couldnt create default cursor with error: {DB_con_error}, trying to create the database instead")
-    DB_2 = mysql.connector.connect(**CREATE_DB_CONFIG) # Connect to a database with the config set in the parameters
-    CURSOR_2 = DB_2.cursor() # Instantiate a cursor to work with the specified database
-    print("Setup cursor for database creation.")
-
-    def create_database():
-        CURSOR_2.execute("CREATE DATABASE IF NOT EXISTS {} DEFAULT CHARACTER SET 'utf8mb4' COLLATE utf8mb4_0900_ai_ci".format(DB_name)) #https://dba.stackexchange.com/questions/76788/create-a-mysql-database-with-charset-utf-8
-        print("Database created:", DB_name)
-    create_database()     # NOTE: When creating a database, need to remove the database parameter in the "config" dictionary.
-    sys.exit("Database created, now exiting.") #exiting here so you run the script twice in case there is no database first.
-
-
-bom = botometer.Botometer(wait_on_ratelimit=True, rapidapi_key=rapidapi_key, **twitter_app_auth)
-print("Twitter and RapidAPI Auth completd.")
-########################## Define functions ##########################
+########################## Functions ##########################
 def count_rows_tweets():
     sql = ("SELECT COUNT(`id_str`) FROM users")
     cursor.execute(sql)
@@ -68,9 +38,8 @@ def check_account(UID):
     # ratelimits = bom.twitter_api.rate_limit_status()
     # searchtweets = RL["resources"]["search"]['/search/tweets']["remaining"]
     # usertimeline = RL["resources"]["statuses"]['/statuses/user_timeline']["remaining"]
-    # print ("API calls this session:", RUN_COUNTER.value, "/search/tweets calls remaining:", searchtweets, "/statuses/user_timeline calls remaining:", usertimeline)
+    # print ("Rate limits: /search/tweets calls remaining:", searchtweets, "/statuses/user_timeline calls remaining:", usertimeline)
     print(f"API calls this session: {RUN_COUNTER.value} out of {scan_size}")
-
     count_rows_tweets()
 
     try:
@@ -86,8 +55,6 @@ def check_account(UID):
     except Exception as err:
         print("Couldnt get account list!", err)
 
-
-
     # MAIN API CALL #
     try:
         result = bom.check_account(UID)
@@ -99,8 +66,6 @@ def check_account(UID):
         # cursor.commit() # This throws and Error! 'CMySQLCursor' object has no attribute 'commit'
         print("updated cell as 'suspended'.\n")
         return
-
-
 
     # USER INFO - parse indiviudal datapoints from the botometer dictionary, then input them into the database
     majority_lang = result['user']['majority_lang']
@@ -224,43 +189,50 @@ def check_account(UID):
     'raw_universal_spammer': raw_universal_spammer,
     'UID': UID})
     db.commit()
-
     print(f"Results for {UID} committed successfully to database.\n")
-    return
 
-# function for creating a global variable to be used across all processes. ->https://stackoverflow.com/questions/61299918/shared-variable-in-concurrent-futures-processpoolexecutor-python
-def set_global(args):
+# # function for creating a global variable to be used across all processes. ->https://stackoverflow.com/questions/61299918/shared-variable-in-concurrent-futures-processpoolexecutor-python
+# def set_global(args):
+#     global RUN_COUNTER
+#     RUN_COUNTER = args
+
+@task
+def main_function():
+    print("Welcome to Botscorer, MySQL version")
+    starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
+    global bom
+    bom = botometer.Botometer(wait_on_ratelimit=True, rapidapi_key=rapidapi_key, **twitter_app_auth)
+    print("Twitter and RapidAPI authentication complete. Now scanning...")
+
+    starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
+    global scan_size
+    scan_size = 500
+    cursor.execute("SELECT `user_id` FROM users WHERE `id_str` IS NULL ORDER BY RAND() LIMIT %(scan_size)s", {'scan_size': scan_size}) # RANDOM SELECTION
+    accountstuple = cursor.fetchall() # FIXED by using "conn.row_factory" in line 27 - "fetchall" returns a list of tuples due to the python DB api - https://www.python.org/dev/peps/pep-0249/
+    db.commit() # Might not be needed
+    accounts = []
+    [accounts.append(i[0]) for i in accountstuple] # need to use i[0] to ensure the list is extracted out of the tuple returned by fetchall
+    #accounts.extend(accountstuple) #also a potential method of extracting items from a tuple
     global RUN_COUNTER
-    RUN_COUNTER = args
-    
-#####################
-# Start of main body
-#####################
-starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
-global scan_size
-scan_size = 50000 
-cursor.execute("SELECT `user_id` FROM users WHERE `id_str` IS NULL ORDER BY RAND() LIMIT %(scan_size)s", {'scan_size': scan_size}) # RANDOM SELECTION
-accountstuple = cursor.fetchall() # FIXED by using "conn.row_factory" in line 27 - "fetchall" returns a list of tuples due to the python DB api - https://www.python.org/dev/peps/pep-0249/
-db.commit() # Dont know if this is needed
-accounts = []
-[accounts.append(i[0]) for i in accountstuple] # need to use i[0] to ensure the list is extracted out of the tuple returned by fetchall
-#accounts.extend(accountstuple) #also a potential method of extracting items from a tuple
+    RUN_COUNTER = multiprocessing.Value('i', 0) #I for integer, 0 for starting value. Instantiates a global variable useable across process pools. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=4, initializer=set_global, initargs=(RUN_COUNTER,)) as executor:
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        executor.map(check_account, accounts, timeout=10, chunksize=1000000) #Finished scanning in  56 seconds, or 0 minutes. FOR 8 ACCOUNTS. Note: specifiying default values does not affect the program at all!
+    #     Note: Map function returns the results in the order they were started. A for loop will return future objects in the order that they finish. 29:22 -> https://www.youtube.com/watch?v=fKl2JW_qrso
 
-RUN_COUNTER = multiprocessing.Value('i', 0) #I for integer, 0 for starting value. Instantiates a global variable useable across process pools. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value
+    #### Single thread version for testing ####
+    #for x in accounts:
+    #   check_account(x) 
 
-# Multiprocessing version
-# with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-# with concurrent.futures.ProcessPoolExecutor(max_workers=4, initializer=set_global, initargs=(RUN_COUNTER,)) as executor:
-with concurrent.futures.ProcessPoolExecutor() as executor:
-    executor.map(check_account, accounts, timeout=10, chunksize=1000000) #Finished scanning in  56 seconds, or 0 minutes. FOR 8 ACCOUNTS. Note: specifiying default values does not affect the program at all!
-#     Note: Map function returns the results in the order they were started. A for loop will return future objects in the order that they finish. 29:22 -> https://www.youtube.com/watch?v=fKl2JW_qrso
+    finishtime = int(time.perf_counter()) #int the perf_counter float to an integer, easier to read
+    print("\nFinished scanning in ", (finishtime-starttime),"seconds, or", int((finishtime-starttime)/60), "minutes.")
+    db.close()
 
-## Single thread version for testing
-#for x in accounts:
-#   check_account(x) # Finished scanning in  191 seconds, or 3 minutes. FOR 8 ACCOUNTS.
+with Flow("TI: Get bot scores") as flow:
+    main_function()
 
-finishtime = int(time.perf_counter()) #int the perf_counter float to an integer, easier to read
-print("\nFinished scanning in ", (finishtime-starttime),"seconds, or", int((finishtime-starttime)/60), "minutes.")
+flow.register(project_name="project-traderi")
+# flow.run()
 
-    # CLOSE DB CONNECTION
-db.close()
+# if __name__ == "__main__":
+    # flow.run()

@@ -2,12 +2,12 @@
 # To fixed text encoding issues in MySQL, follow this guide: https://sebhastian.com/mysql-incorrect-string-value/ OR USE: ALTER TABLE tweepy_cashtags_main CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 import mysql.connector # For connecting to dataset
-from mysql.connector import errorcode # Used in error checking on table creation.
 import tweepy
 import sys # Needed for sys.exit() method
 import pandas
 import time #for the time.sleep() function, used to create a delay between twint searches. Also using it to track compute times
 
+from mysql.connector import errorcode # Used in error checking on table creation.
 from api_keys import apikey, apikeysecret, access_token, access_token_secret, config, createDBconfig, DB_name
 from modules.CleanTickerList import cleaning, merge_and_export
 from modules.createTables import create_tables

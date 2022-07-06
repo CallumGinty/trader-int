@@ -1,4 +1,5 @@
 import mysql.connector # For connecting to dataset
+import sys # used to exit the program upon creating database
 
 from api_keys import config, createDBconfig, DB_name
 

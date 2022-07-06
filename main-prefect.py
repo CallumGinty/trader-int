@@ -12,7 +12,9 @@ def get_bot_scores():
 
 with Flow("Trader-Int Flow") as flow:
 	get_bot_scores()
-	
+
+# if __name__ == "__main__":
+	# get_bot_scores()
 
 # flow.register(project_name="project-traderi")
 flow.run() # For running the file locally - use for development/debugging
