@@ -6,6 +6,7 @@ import time # used for measuring run time
 import botometer #Botometer will only work with tweepy version < 3.10
 import prefect
 from prefect import task, Flow
+from prefect.storage import GitHub
 
 from datetime import datetime
 from api_keys import rapidapi_key, twitter_app_auth
