@@ -1,11 +1,5 @@
 # To run this code, open terminal and use "python3.9 filename.py"
-# previous versions were named 'mysql-v3.py' (version 3 and below)
 # To fixed text encoding issues in MySQL, follow this guide: https://sebhastian.com/mysql-incorrect-string-value/ OR USE: ALTER TABLE tweepy_cashtags_main CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# Version 1: Setup basics of mysql server in python
-# Version 2: Integrate datascraping again (basic)
-# Version 3: Cleanup and back to normal operation. Copies from temp table into main table. All fields are saved.
-# Version 4: Added cleaning operations, extract users to another table.
 
 import mysql.connector # For connecting to dataset
 from mysql.connector import errorcode # Used in error checking on table creation.
@@ -17,31 +11,13 @@ import time #for the time.sleep() function, used to create a delay between twint
 from api_keys import apikey, apikeysecret, access_token, access_token_secret, config, createDBconfig, DB_name
 from modules.CleanTickerList import cleaning, merge_and_export
 from modules.createTables import create_tables
-from modules.cursorModule import cursor, db
+from modules.cursorModule import database_startup, cursor, db
 # from modules.cursorModule import cursor2 -- cannot import if it is not made. consider 'try' function.
 
 ##################### Set parameters and start counters #####################
 print("#### TWEEPY Cashtag Scraper, MySQL version ####")
 loop = 0 # start loop counter
 starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
-
-# ##################### Start database connection and cursor #####################
-# try:
-#     db = mysql.connector.connect(**config) # Connect to a database with the config set in the parameters
-#     print ("Connection to database", DB_name, "successful.\n")
-#     cursor = db.cursor() # Instantiate a cursor to work with the specified database
-# except: #If there is no database yet, run the script twice. First will create the database then error out. the secondtime will run the actual program.
-#     print ("Couldnt create default cursor, trying to create the database instead")
-#     db2 = mysql.connector.connect(**createDBconfig) # Connect to a database with the config set in the parameters
-#     cursor2 = db2.cursor() # Instantiate a cursor to work with the specified database
-#     print ("Setup cursor for database creation.")
-
-#     def create_database():
-#         cursor2.execute("CREATE DATABASE IF NOT EXISTS {} DEFAULT CHARACTER SET 'utf8mb4' COLLATE utf8mb4_0900_ai_ci".format(DB_name)) #https://dba.stackexchange.com/questions/76788/create-a-mysql-database-with-charset-utf-8
-#         print ("Database created:", DB_name)
-
-#     create_database()     # NOTE: When creating a database, need to remove the database parameter in the "config" dictionary.
-#     sys.exit("Database created, now exiting.") #exiting here so you run the script twice in case there is no database first.
 
 ################ Start Twitter connection ####################
 auth = tweepy.OAuthHandler(apikey, apikeysecret)

@@ -1,4 +1,4 @@
-from modules.cursorModule import cursor
+from modules.cursorModule import database_startup, cursor
 from api_keys import DB_name
 import mysql.connector # For connecting to dataset
 from mysql.connector import errorcode # Used in error checking on table creation.

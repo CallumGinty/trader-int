@@ -10,8 +10,6 @@ def get_bot_scores():
 	logger.info("Running the getBotScores script.")
 	import getBotScores
 
-
-
 with Flow("Trader-Int Flow") as flow:
 	get_bot_scores()
 	
