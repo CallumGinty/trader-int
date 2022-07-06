@@ -13,13 +13,13 @@ import tweepy
 import sys # Needed for sys.exit() method
 import pandas
 import time #for the time.sleep() function, used to create a delay between twint searches. Also using it to track compute times
-from database_config import config, createDBconfig, DB_name
-from api_keys import apikey, apikeysecret, access_token, access_token_secret
+# from database_config import 
+from api_keys import apikey, apikeysecret, access_token, access_token_secret, config, createDBconfig, DB_name
 from modules.CleanTickerList import cleaning, merge_and_export
 
 
 ##################### Set parameters and start counters #####################
-print("Welcome to TWEEPY ASX Scraper, MySQL version")
+print("#### TWEEPY Cashtag Scraper, MySQL version ####")
 loop = 0 # start loop counter
 starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
 
@@ -102,7 +102,7 @@ def create_tables():
         print ("Created table: 'tweepy_cashtags_temp' successfully!")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-            print ("Table 'tweepy_cashtags_temp' already exists.\n")
+            print ("Table 'tweepy_cashtags_temp' already exists.")
         else:
             print (err.msg)
 
@@ -158,7 +158,7 @@ def create_tables():
         print("Table 'tweept_cashtags_main' created successfully!")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-            print ("Table 'tweepy_cashtags_main' already exists. \n")
+            print ("Table 'tweepy_cashtags_main' already exists.")
         else:
             print (err.msg)
     
@@ -498,6 +498,7 @@ ST = stocks_df.loc[:, 'cashtags'] #make the 'cashtags' column into a list # ST i
 # ST = ["$QAN"] # Uncheck for debugging. NOTE: This MUST be a tuple or a list. If left as a string it will loop over each letter.
 
 for master_loop in range(1,300): # range(x,y) Where x is starting number and y is ending number. Increments of 1. 
+    print ("Checking/Creating database tables...")
     create_tables()
     print ("Counting the number of users...")
     count_rows_users()
