@@ -235,7 +235,7 @@ with Flow("TI: Get bot scores") as flow:
 flow.storage = GitHub(
     repo="CallumGinty/trader-int",
     path="getBotScores.py")
-
+#Version3
 
 # flow.register(project_name="project-traderi")
 # flow.run()
