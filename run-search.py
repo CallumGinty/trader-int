@@ -13,33 +13,35 @@ import tweepy
 import sys # Needed for sys.exit() method
 import pandas
 import time #for the time.sleep() function, used to create a delay between twint searches. Also using it to track compute times
-# from database_config import 
+
 from api_keys import apikey, apikeysecret, access_token, access_token_secret, config, createDBconfig, DB_name
 from modules.CleanTickerList import cleaning, merge_and_export
-
+from modules.createTables import create_tables
+from modules.cursorModule import cursor, db
+# from modules.cursorModule import cursor2 -- cannot import if it is not made. consider 'try' function.
 
 ##################### Set parameters and start counters #####################
 print("#### TWEEPY Cashtag Scraper, MySQL version ####")
 loop = 0 # start loop counter
 starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
 
-##################### Start database connection and cursor #####################
-try:
-    db = mysql.connector.connect(**config) # Connect to a database with the config set in the parameters
-    print ("Connection to database", DB_name, "successful.\n")
-    cursor = db.cursor() # Instantiate a cursor to work with the specified database
-except: #If there is no database yet, run the script twice. First will create the database then error out. the secondtime will run the actual program.
-    print ("Couldnt create default cursor, trying to create the database instead")
-    db2 = mysql.connector.connect(**createDBconfig) # Connect to a database with the config set in the parameters
-    cursor2 = db2.cursor() # Instantiate a cursor to work with the specified database
-    print ("Setup cursor for database creation.")
+# ##################### Start database connection and cursor #####################
+# try:
+#     db = mysql.connector.connect(**config) # Connect to a database with the config set in the parameters
+#     print ("Connection to database", DB_name, "successful.\n")
+#     cursor = db.cursor() # Instantiate a cursor to work with the specified database
+# except: #If there is no database yet, run the script twice. First will create the database then error out. the secondtime will run the actual program.
+#     print ("Couldnt create default cursor, trying to create the database instead")
+#     db2 = mysql.connector.connect(**createDBconfig) # Connect to a database with the config set in the parameters
+#     cursor2 = db2.cursor() # Instantiate a cursor to work with the specified database
+#     print ("Setup cursor for database creation.")
 
-    def create_database():
-        cursor2.execute("CREATE DATABASE IF NOT EXISTS {} DEFAULT CHARACTER SET 'utf8mb4' COLLATE utf8mb4_0900_ai_ci".format(DB_name)) #https://dba.stackexchange.com/questions/76788/create-a-mysql-database-with-charset-utf-8
-        print ("Database created:", DB_name)
+#     def create_database():
+#         cursor2.execute("CREATE DATABASE IF NOT EXISTS {} DEFAULT CHARACTER SET 'utf8mb4' COLLATE utf8mb4_0900_ai_ci".format(DB_name)) #https://dba.stackexchange.com/questions/76788/create-a-mysql-database-with-charset-utf-8
+#         print ("Database created:", DB_name)
 
-    create_database()     # NOTE: When creating a database, need to remove the database parameter in the "config" dictionary.
-    sys.exit("Database created, now exiting.") #exiting here so you run the script twice in case there is no database first.
+#     create_database()     # NOTE: When creating a database, need to remove the database parameter in the "config" dictionary.
+#     sys.exit("Database created, now exiting.") #exiting here so you run the script twice in case there is no database first.
 
 ################ Start Twitter connection ####################
 auth = tweepy.OAuthHandler(apikey, apikeysecret)
@@ -47,120 +49,6 @@ auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 ################ Functions ####################
-def create_tables():
-    cursor.execute ("USE {}".format(DB_name))
-    try:        # Create the temp table first (no reason)
-        cursor.execute("""CREATE TABLE `tweepy_cashtags_temp` (
-        `tweet_id` BIGINT NOT NULL,
-        `tweet_id_str` varchar(255),
-        `tweet_text_short` text,
-        `created_at` varchar(255),
-        `derived_URL` varchar(255),
-        `source` varchar(255),
-        `truncated` varchar(255),
-        `in_reply_to_screen_name` varchar(255),
-        `in_reply_to_status_id` varchar(255),
-        `in_reply_to_user_id` varchar(255),
-        `is_quote_status` varchar(255),
-        `retweet_count` varchar(255),
-        `tweet_language` varchar(255),
-        `user_id` BIGINT,
-        `user_id_str` varchar(255),
-        `name` varchar(255),
-        `screen_name` varchar(255),
-        `location` varchar(255),
-        `derived_account_url` varchar(255),
-        `profile_link` varchar(255),
-        `user_description` varchar(255),
-        `protected` varchar(255),
-        `verified` varchar(255),
-        `followers_count` BIGINT,
-        `friends_count` BIGINT,
-        `listed_count` BIGINT,
-        `favourites_count` BIGINT,
-        `statuses_count` BIGINT,
-        `date_user_created` varchar(255),
-        `user_utc_offset` varchar(255),
-        `user_time_zone` varchar(255),
-        `geo_enabled` varchar(255),
-        `user_lang` varchar(255),
-        `contributors_enabled` varchar(255),
-        `is_translator` varchar(255),
-        `default_profile` varchar(255),
-        `default_profile_image` varchar(255),
-        `favorite_count` BIGINT,
-        `parsed_user_mentions_id` varchar(255),
-        `parsed_user_mentions_screen_name` varchar(255),
-        `possibly_sensitive` varchar(255),
-        `url_in_tweet` varchar(255),
-        `hashtags` varchar(255),
-        `cashtags` varchar(255),
-        `tweepy_search_term` varchar(255),
-        PRIMARY KEY (`tweet_id`)
-        ) ENGINE = InnoDB
-        """)
-        print ("Created table: 'tweepy_cashtags_temp' successfully!")
-    except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-            print ("Table 'tweepy_cashtags_temp' already exists.")
-        else:
-            print (err.msg)
-
-        # Create the main cashtag table
-    try:
-        cursor.execute("""CREATE TABLE `tweepy_cashtags_main` (
-        `tweet_id` BIGINT NOT NULL,
-        `tweet_id_str` varchar(255),
-        `tweet_text_short` text,
-        `created_at` varchar(255),
-        `derived_URL` varchar(255),
-        `source` varchar(255),
-        `truncated` varchar(255),
-        `in_reply_to_screen_name` varchar(255),
-        `in_reply_to_status_id` varchar(255),
-        `in_reply_to_user_id` varchar(255),
-        `is_quote_status` varchar(255),
-        `retweet_count` varchar(255),
-        `tweet_language` varchar(255),
-        `user_id` BIGINT,
-        `user_id_str` varchar(255),
-        `name` varchar(255),
-        `screen_name` varchar(255),
-        `location` varchar(255),
-        `derived_account_url` varchar(255),
-        `profile_link` varchar(255),
-        `user_description` varchar(255),
-        `protected` varchar(255),
-        `verified` varchar(255),
-        `followers_count` BIGINT,
-        `friends_count` BIGINT,
-        `listed_count` BIGINT,
-        `favourites_count` BIGINT,
-        `statuses_count` BIGINT,
-        `date_user_created` varchar(255),
-        `user_utc_offset` varchar(255),
-        `user_time_zone` varchar(255),
-        `geo_enabled` varchar(255),
-        `user_lang` varchar(255),
-        `contributors_enabled` varchar(255),
-        `is_translator` varchar(255),
-        `default_profile` varchar(255),
-        `default_profile_image` varchar(255),
-        `favorite_count` BIGINT,
-        `parsed_user_mentions_id` varchar(255),
-        `parsed_user_mentions_screen_name` varchar(255),
-        `possibly_sensitive` varchar(255),
-        `url_in_tweet` varchar(255),
-        `hashtags` varchar(255),
-        `cashtags` varchar(255),
-        `tweepy_search_term` varchar(255),
-        PRIMARY KEY (`tweet_id`)) ENGINE = InnoDB """)
-        print("Table 'tweept_cashtags_main' created successfully!")
-    except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-            print ("Table 'tweepy_cashtags_main' already exists.")
-        else:
-            print (err.msg)
     
 def setup_user_table():
     try:
@@ -504,6 +392,7 @@ for master_loop in range(1,300): # range(x,y) Where x is starting number and y i
     count_rows_users()
     print ("Counting the number of rows...")
     count_rows_tweets()
+    print ("Deleting retweets...")
     delete_RTs()
     count_rows_tweets()
     setup_user_table()
