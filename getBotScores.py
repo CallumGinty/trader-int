@@ -207,7 +207,7 @@ def main_function():
 
     starttime = int(time.perf_counter()) #start the time counter and convert variable to an interger
     global scan_size
-    scan_size = 500
+    scan_size = 5
     cursor.execute("SELECT `user_id` FROM users WHERE `id_str` IS NULL ORDER BY RAND() LIMIT %(scan_size)s", {'scan_size': scan_size}) # RANDOM SELECTION
     accountstuple = cursor.fetchall() # FIXED by using "conn.row_factory" in line 27 - "fetchall" returns a list of tuples due to the python DB api - https://www.python.org/dev/peps/pep-0249/
     db.commit() # Might not be needed
